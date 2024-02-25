@@ -334,8 +334,10 @@ def main(args):
         _evaluation(responses, "aki.csv")
 
 if __name__ == "__main__":
-    MLLP_ADDRESS = "localhost:8440"
-    PAGER_ADDRESS = "localhost:8441"
+    # MLLP_ADDRESS = "localhost:8440"
+    # PAGER_ADDRESS = "localhost:8441"
+    MLLP_ADDRESS = os.environ["MLLP_ADDRESS"]
+    PAGER_ADDRESS = os.environ["PAGER_ADDRESS"]
     parser = argparse.ArgumentParser()
     # parser.add_argument("--mllp_port", type=int, default=8440)
     # parser.add_argument("--pager_port", type=int, default=8441)
