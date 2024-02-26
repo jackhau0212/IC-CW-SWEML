@@ -10,6 +10,7 @@ COPY messages.mllp /simulator/
 COPY trained_model.pkl /simulator/
 # COPY history.csv /simulator/
 COPY model.py /simulator/
+COPY backup.txt /simulator/
 # ENV MLLP_ADDRESS=host.docker.internal:8440
 # ENV PAGER_ADDRESS=host.docker.internal:8441
 EXPOSE 8440

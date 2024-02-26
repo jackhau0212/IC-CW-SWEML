@@ -80,6 +80,27 @@ def to_mllp(segments:list) -> bytes:
     m += bytes(chr(simulator.MLLP_END_OF_BLOCK) + chr(simulator.MLLP_CARRIAGE_RETURN), "ascii")
     return m
 
+
+def _parse_history_file(database: dict, file_path: str) -> dict:
+    """
+    
+    
+    """
+    with open('backup.txt', 'r') as file:
+        # skip first two rows (headers)
+        next(file)
+        next(file)
+        while True:
+            try:
+                line1 = next(file).strip()  # Read the first line
+                line2 = next(file).strip()  # Read the next line
+                mrn = line2.split("|")[3]
+                msg = [line1, line2]
+                pas_process(mrn, msg, database)
+            except StopIteration:  # End of file
+                break
+    return database
+
 def convert_history_to_dictionary(history_filename: str) -> dict:
     """
     Reads the a CSV file of historical patient data and converts to a
@@ -97,7 +118,6 @@ def convert_history_to_dictionary(history_filename: str) -> dict:
 
     else: # otherwise load from original csv 
         database = {}
-
         with open(history_filename, "r") as f:
             reader = csv.reader(f)
             next(reader) # skip header
@@ -105,10 +125,10 @@ def convert_history_to_dictionary(history_filename: str) -> dict:
                 database[row[0]] = {
                     "results": [float(x) for x in row[2:len(row):2] if x != ""]
                 }
-
+        database = _parse_history_file(database, "backup.txt")
         with open("/state/database.pkl", "wb") as pkl:  # write to pickle for future use
             pickle.dump(database, pkl)
-
+       
     return database
 
 def send_message(mrn: str, pager_host: str, pager_port: int) -> None:
@@ -267,14 +287,13 @@ def main(args):
     Bloods=[]
 
     attempts = 0
-    max_attempts =100
+    max_attempts = 100
 
     responses = {}  # track aki events with patient numbers and response times for evaluation
     with open('trained_model.pkl', 'rb') as file:  # load model
         trained_model = pickle.load(file)
 
-    database = convert_history_to_dictionary("/hospital-history/history.csv")  # load historical data
-
+    database = convert_history_to_dictionary("/hospital-history/history.csv")  # load historical data 
     while attempts < max_attempts:
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:  # create IPv4 TCP socket with MLLP
@@ -334,19 +353,13 @@ def main(args):
         _evaluation(responses, "aki.csv")
 
 if __name__ == "__main__":
-    # MLLP_ADDRESS = "localhost:8440"
-    # PAGER_ADDRESS = "localhost:8441"
     MLLP_ADDRESS = os.environ["MLLP_ADDRESS"]
     PAGER_ADDRESS = os.environ["PAGER_ADDRESS"]
     parser = argparse.ArgumentParser()
-    # parser.add_argument("--mllp_port", type=int, default=8440)
-    # parser.add_argument("--pager_port", type=int, default=8441)
-    # parser.add_argument("--mllp_host", type=str, default="host.docker.internal")
-    # parser.add_argument("--pager_host", type=str, default="host.docker.internal")
+    parser.add_argument("--mllp_port", type=int, default=8440)
+    parser.add_argument("--pager_port", type=int, default=8441)
     parser.add_argument("--mllp_address", type=str, default=MLLP_ADDRESS)
     parser.add_argument("--pager_address", type=str, default=PAGER_ADDRESS)
-    # parser.add_argument("--mllp_address", type=str, default='localhost:8440')
-    # parser.add_argument("--pager_address", type=str, default='localhost:8441')
     parser.add_argument("--evaluate", type=bool, default=False)
     parser.add_argument("--model", type=str, default="trained_model.pkl")
     args = parser.parse_args()
