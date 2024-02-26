@@ -8,7 +8,7 @@ COPY requirements.txt /simulator/
 RUN pip3 install -r /simulator/requirements.txt
 COPY messages.mllp /simulator/
 COPY trained_model.pkl /simulator/
-COPY history.csv /simulator/
+# COPY history.csv /simulator/
 COPY model.py /simulator/
 # ENV MLLP_ADDRESS=host.docker.internal:8440
 # ENV PAGER_ADDRESS=host.docker.internal:8441

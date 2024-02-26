@@ -28,14 +28,14 @@ spec:
     spec:
       containers:
       - name: aki-detection
-        image: imperialswemlsspring2024.azurecr.io/coursework5-kronprinzen
+        image: imperialswemlsspring2024.azurecr.io/coursework6-kronprinzen
         command: ["/simulator/model.py"]
         args: ["--model=/simulator/trained_model.pkl"]
         env:
         - name: MLLP_ADDRESS
-          value: kronprinzen-simulator.coursework5:8440
+          value: kronprinzen-simulator.coursework6:8440
         - name: PAGER_ADDRESS
-          value: kronprinzen-simulator.coursework5:8441
+          value: kronprinzen-simulator.coursework6:8441
         ports:
         - name: http
           containerPort: 8000
@@ -52,7 +52,7 @@ spec:
             cpu: 1
       initContainers:
       - name: copy-hospital-history
-        image: imperialswemlsspring2024.azurecr.io/coursework5-history
+        image: imperialswemlsspring2024.azurecr.io/coursework6-history
         volumeMounts:
           - mountPath: "/hospital-history"
             name: hospital-history

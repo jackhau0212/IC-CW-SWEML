@@ -273,7 +273,7 @@ def main(args):
     with open('trained_model.pkl', 'rb') as file:  # load model
         trained_model = pickle.load(file)
 
-    database = convert_history_to_dictionary("history.csv")  # load historical data
+    database = convert_history_to_dictionary("/hospital-history/history.csv")  # load historical data
 
     while attempts < max_attempts:
 
