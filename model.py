@@ -29,14 +29,21 @@ MLLP_START_OF_BLOCK = 0x0b
 MLLP_END_OF_BLOCK = 0x1c
 MLLP_CARRIAGE_RETURN = 0x0d
 
-
+# Create 7 different metrics using prometheus. Counter- for monotonically increasing values. Histogram- For producing a histogram seperated into specified buckets. Gauge- For values that can increase or decrease
 Total_messages_counter = Counter('Total_messages_counter', 'Total number of messages processed')
+#1: Counting all PAS and LIMs messages,
 Total_numbeer_blood_counter = Counter('Total_numbeer_blood_counter', 'Total number of blood tests processed')
+#2: Number of LIMs messages received.
 Number_positive_counter = Counter('Number_positive_counter', 'Total number of positive predictions')
+#3: How many results have been postivie. 
 Number_of_non_200_counter = Counter('Number_of_non_200_counter', 'Total number of non-200 responses')
+#4: Number of times a non acknowledgment was sent by sockets being connected to
 Number_of_recconections_counter = Counter('Number_of_recconections_counter', 'Total number of reconnections')
+#5: Number of times a recconection has occured to the pager service
 Distribuition_bloods= Histogram("Distribuition_bloods", 'distribuitions of bloods',buckets=[80, 90, 105, 120,140, 'inf'])
-Latency_times= Gauge("Latency_times", '99 percentile distribuitions of bloods')
+#6: Produce a histogram of the blood counts recevied to identify anomolies or missprocessing e.g. 100% of bloods >140
+Latency_times= Gauge("Latency_times", '99 percentile of time')
+# 99 percentile of the latency time between receiving a LIMs. processing it and then sending a pager if positive. 
 
 
 def sigterm_handler(signum: int, frame: None, database: dict) -> None:
