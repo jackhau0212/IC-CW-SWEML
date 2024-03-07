@@ -40,7 +40,7 @@ system immedieatly if an AKI event is detected.
 This is a **brief** overview of how our system works. Please see the attached `design_document.pdf` for a more detailed rundown of the system. 
 
 - `model.py` is the implementation of our inference system, it processes incoming messages from the hopsital and uses the data to inference with `trained_model.pkl` - a trained RandomForest implementation.
-- On startup, the system will first check for a `database.pkl` file in the `state` folder (see Kubernetes directory structure in `design_document.pdf`). This would consist of the most up-to-date version of the database in the event the system either crashed or was shutdown.
+- On startup, the system will first check for a `database.pkl` file in the `state` folder in the Kubernetes deployment. This would consist of the most up-to-date version of the database in the event the system either crashed or was shutdown.
 - If `database.pkl` does not exist (e.g. on the when the system is first run) then data will instead be loaded from `hospital-history/history.csv`.
 - The system will continuously monitor the connection socket with the hospital servers and automatically process data and alert the pager system if any AKI events occur.
 - The current database state `database.pkl` is updated every new message received.
