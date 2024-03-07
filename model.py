@@ -256,19 +256,25 @@ def lims_process(patient_id: str, message: list, database: dict,Bloods:list) -> 
 
     n = len(database[patient_id]["results"])
 
-    # Create test point consiting of age, gender and 5 most recent test results
     if n >= 5:
+        # If there are more than 5 previous results, take the most recent 5
         test_point = database[patient_id]["results"][-5:]
     else:
+        # If there are less than 5, pad with the mean
         mean = np.mean(database[patient_id]["results"])
         test_point = [mean for i in range(5-n)]+database[patient_id]["results"]
 
     if database[patient_id]["sex"] == 'M':
+        # Insert a 1 for male to the begining of the test point
         test_point.insert(0,1)
     else:
+        # Insert a 0 for female to the begining of the test point
         test_point.insert(0,0)
+
+    # Insert the age of the patient to the begining of the test point
     test_point.insert(0,database[patient_id]["age"])
     test_point = np.array(test_point).reshape(1,-1)
+    
     # print(patient_id, test_point)
     return test_point
 
