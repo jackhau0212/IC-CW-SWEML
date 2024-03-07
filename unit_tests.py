@@ -1,20 +1,29 @@
-## UNIT TESTS ##
+"""
+Unit tests to confirm the message processing steps 
+are working as intended. 
+
+"""
 
 from model import from_mllp, to_mllp, pas_process, lims_process
 import numpy as np
 
 def test_from_mllp() -> bool:
-
-
+    """
+    Tests MLLP messages are processed correctly.
+    """
     msg1 = b'\x0bMSH|^~\\&|SIMULATION|SOUTH RIVERSIDE|||20240102135300||ADT^A01|||2.5\rPID|1||497030||ROSCOE DOHERTY||19870515|M\r\x1c\r'
     e1 = ['MSH|^~\\&|SIMULATION|SOUTH RIVERSIDE|||20240102135300||ADT^A01|||2.5',
                 'PID|1||497030||ROSCOE DOHERTY||19870515|M']
     a1 = from_mllp(msg1)
 
+    assert e1 == a1
+
     msg2 = b'\x0bMSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240310134000||ADT^A01|||2.5\rPID|1||160116||AJAY BURTON||20010829|M\r\x1c\r'
     e2 = ['MSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240310134000||ADT^A01|||2.5', 
           'PID|1||160116||AJAY BURTON||20010829|M']
     a2 = from_mllp(msg2)
+
+    assert e2 == a2
 
     msg3 = b'\x0bMSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240401084800||ORU^R01|||2.5\rPID|1||265445\rOBR|1||||||20240401084800\rOBX|1|SN|CREATININE||116.05310027497755\r\x1c\r'
     e3 = ['MSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240401084800||ORU^R01|||2.5',
@@ -23,9 +32,12 @@ def test_from_mllp() -> bool:
           'OBX|1|SN|CREATININE||116.05310027497755']
     a3 = from_mllp(msg3)
 
-    return e1 == a1 and e2 == a2 and e3 == a3
+    assert e3 == a3
     
 def test_to_mllp() -> bool:
+    """
+    Tests messages are converted to MLLP format correctly
+    """
 
     msg1 = ['MSH|^~\\&|SIMULATION|SOUTH RIVERSIDE|||20240102135300||ADT^A01|||2.5',
                 'PID|1||497030||ROSCOE DOHERTY||19870515|M']
@@ -51,6 +63,9 @@ def test_to_mllp() -> bool:
     assert a3 == e3
 
 def test_pas_process() -> bool:
+    """
+    Tests recieved PAS messages are processed correctly.
+    """
     db = {}
 
     msg = ['MSH|^~\\&|SIMULATION|SOUTH RIVERSIDE|||20240102135300||ADT^A03|||2.5',
@@ -91,6 +106,9 @@ def test_pas_process() -> bool:
                             "age": 22}
                     }
 def test_lims_process():
+    """
+    Tests LIMS messages are correctly added to the DB
+    """
     db =    {497030:  {  "results": [],
                         "sex": 'F',
                         "age": 36

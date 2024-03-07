@@ -19,14 +19,16 @@ from prometheus_client import start_http_server
 
 
 start_http_server(8000)
-ACK = [
+
+## Consts for communicating with the hospital server ## 
+ACK = [ 
     "MSH|^~\&|||||20240129093837||ACK|||2.5",
     "MSA|AA",
 ]
-
 MLLP_START_OF_BLOCK = 0x0b
 MLLP_END_OF_BLOCK = 0x1c
 MLLP_CARRIAGE_RETURN = 0x0d
+
 
 Total_messages_counter = Counter('Total_messages_counter', 'Total number of messages processed')
 Total_numbeer_blood_counter = Counter('Total_numbeer_blood_counter', 'Total number of blood tests processed')
@@ -37,13 +39,19 @@ Distribuition_bloods= Histogram("Distribuition_bloods", 'distribuitions of blood
 Latency_times= Gauge("Latency_times", '99 percentile distribuitions of bloods')
 
 
-def sigterm_handler(signum, frame, database):
-    
+def sigterm_handler(signum: int, frame: None, database: dict) -> None:
+    """
+    Handles receiving a SIGTERM signal. Saves the 
+    database in its current state and exists the program
+    """
     with open("/state/database.pkl", "wb") as pkl:
         pickle.dump(database, pkl)
     sys.exit(0)
 
 def select_buckets(data):
+    """
+    Converts data to buckets for Prometheus client.
+    """
     # Calculate quantiles to determine bucket boundaries
     quantiles = np.linspace(0, 1, 6)
     boundaries = np.quantile(data, quantiles)
@@ -83,10 +91,19 @@ def to_mllp(segments:list) -> bytes:
 
 def _parse_history_file(database: dict, file_path: str) -> dict:
     """
-    
+    Parses a .txt file of PAS messages to update the current 
+    state of who is in the hospital. Used as a backup to restore
+    system awareness of who is in the hospital.
+
+    Args:
+        database {dict}: current database
+        file_path {str}: path of backup.txt
+
+    Returns:
+        {dict}: updated database 
     
     """
-    with open('backup.txt', 'r') as file:
+    with open(file_path, 'r') as file:
         # skip first two rows (headers)
         next(file)
         next(file)
@@ -103,8 +120,17 @@ def _parse_history_file(database: dict, file_path: str) -> dict:
 
 def convert_history_to_dictionary(history_filename: str) -> dict:
     """
-    Reads the a CSV file of historical patient data and converts to a
-    dictionary for faster lookup times. 
+    Reads historical patient data stored in a persistant format
+    (e.g. pkl, csv or txt) and loads it into memory via a dict.
+
+    Has 2 modes of operation:
+        1. if a pkl file exists (e.g. from a previous runtime) then
+            load from there
+        2. otherwise (e.g. from a 'fresh' start) load from historical csv 
+            file + backup.txt which contains all current hospital admissions 
+    
+    backup.txt is assumed and is included in our Dockerfile as a result
+    of an incident which required a restart. 
 
     Args:
         history_filename {str} - path to csv file of patient data
@@ -269,23 +295,18 @@ def _evaluation(responses: dict, expected_aki_file: str) -> None:
     print(f"Incorrect aki events: {len(reported_akis-expected_akis)}")
 
 
-signal.signal(signal.SIGTERM, sigterm_handler)
+signal.signal(signal.SIGTERM, sigterm_handler) # init sigterm handler
 
 def main(args):
     """
-    Runs inference. 
+    Runs live inference with the AKI detection system
 
-    Args:
-        mllp_port {int} - port to listen for MLLP stream
-        mllp_host {str} - MLLP host name
-        pager_port {int} - port to send for HTTP request
-        pager_host {str} - HTTP host name
-        evaluate {bool} - evaluate response time 
     """
-
+    # prometheus logging
     Times=[]
     Bloods=[]
 
+    # attempts for time out condition
     attempts = 0
     max_attempts = 100
 
@@ -302,15 +323,15 @@ def main(args):
                 s.connect((args.mllp_address.split(":")[0], int(args.mllp_address.split(":")[1])))  # establish connection
                 print("Connection established!")
 
-            except (socket.error, socket.timeout) as e:
+            except (socket.error, socket.timeout) as e: # catch errors establishing connection
                 print(f"Failure establishing connection! Attempt {attempts}/{max_attempts} to reconnect...")
                 time.sleep(3)
                 attempts += 1
                 continue
 
-            try:
+            try: # with connection established 
 
-                while True:
+                while True: # run inference loop
                     buffer = s.recv(1024)  # read stream 
                     st = perf_counter()  # start timer
 
@@ -344,15 +365,15 @@ def main(args):
                     pickle.dump(database, open("/state/database.pkl", 'wb'))
                     s.sendall(to_mllp(ACK))
         
-            except (socket.timeout, socket.error):
+            except (socket.timeout, socket.error): # catch errors breaking connection
                 print(f"Connection broke!")
                 time.sleep(2)
         
-    if args.evaluate:
-        print('h')
+    if args.evaluate: # evaluation mode
         _evaluation(responses, "aki.csv")
 
 if __name__ == "__main__":
+    
     MLLP_ADDRESS = os.environ["MLLP_ADDRESS"]
     PAGER_ADDRESS = os.environ["PAGER_ADDRESS"]
     parser = argparse.ArgumentParser()
