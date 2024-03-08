@@ -337,31 +337,32 @@ def main(args):
 
                     if len(buffer) == 0:  # breaks if connection is closed
                         break
-
-                    message = from_mllp(buffer)  # remove MLLP framing
-                    Total_messages_counter.inc()
-                    is_PAS = True if ("ADT" in message[0].split("|")[8]) else False  # determine message type
-                    mrn = message[1].split("|")[3]
-
-                    if is_PAS: 
-                        pas_process(mrn, message, database) # process PAS message
-                    else:  
-                        Total_numbeer_blood_counter.inc()
-                        test_point = lims_process(mrn, message, database,Bloods) # process LIMS message
+                    
+                    try: 
                         
-                        prediction_num = trained_model.predict(test_point)[0] # inference
-                        if prediction_num == 1: #if AKI detected
-                            Number_positive_counter.inc()
-                            send_message(mrn, args.pager_address.split(":")[0], int(args.pager_address.split(":")[1])) # send message to pager via HTTP
-                            response_time = perf_counter() - st # calculate response time
-                            Times+=[response_time]
-                            responses[mrn] = response_time
-                            response_time=Latency_times.set(np.percentile(Times, 99))
+                        message = from_mllp(buffer)  # remove MLLP framing
+                        Total_messages_counter.inc()
+                        is_PAS = True if ("ADT" in message[0].split("|")[8]) else False  # determine message type
+                        mrn = message[1].split("|")[3]
 
-                        # prediction_rate = Number_positive_counter / Total_numbeer_blood_counter
-                        # print(prediction_rate)
-                        # Prediction_rate_metric.inc(prediction_rate)
+                        if is_PAS: 
+                            pas_process(mrn, message, database) # process PAS message
+                        else:  
+                            Total_numbeer_blood_counter.inc()
+                            test_point = lims_process(mrn, message, database, Bloods) # process LIMS message
                             
+                            prediction_num = trained_model.predict(test_point)[0] # inference
+                            if prediction_num == 1: #if AKI detected
+                                Number_positive_counter.inc()
+                                send_message(mrn, args.pager_address.split(":")[0], int(args.pager_address.split(":")[1])) # send message to pager via HTTP
+                                response_time = perf_counter() - st # calculate response time
+                                Times+=[response_time]
+                                responses[mrn] = response_time
+                                response_time=Latency_times.set(np.percentile(Times, 99))
+
+                    except:
+                        pass
+
                     pickle.dump(database, open("/state/database.pkl", 'wb'))
                     s.sendall(to_mllp(ACK))
         
